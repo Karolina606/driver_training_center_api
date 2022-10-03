@@ -20,8 +20,8 @@ class Permission(models.Model):
 
 class DrivingLicenseCategory(models.Model):
 	name = models.CharField(max_length=200, null=False)
-	theory_full_time = models.DecimalField(max_digits="100", decimal_places="0", null=False)
-	practice_full_time = models.DecimalField(max_digits="100", decimal_places="0", null=False)
+	theory_full_time = models.DecimalField(max_digits=100, decimal_places=0, null=False)
+	practice_full_time = models.DecimalField(max_digits=100, decimal_places=0, null=False)
 
 	class Meta:
 		db_table = "driving_license_category"
