@@ -27,7 +27,12 @@ from driver_training_center_db import views
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
 router.register(r'groups', views.GroupViewSet)
+router.register(r'roles', views.RoleViewSet)
+router.register(r'permissions', views.PermissionViewSet)
 router.register(r'driving_license_categories', views.DrivingLicenseCategoryViewSet)
+router.register(r'courses', views.CourseViewSet)
+router.register(r'lessons', views.LessonViewSet)
+router.register(r'student_course_status', views.StudentCourseStatusViewSet)
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
