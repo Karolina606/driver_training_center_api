@@ -1,27 +1,28 @@
+from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render
 
-from django.contrib.auth.models import User, Group
-from rest_framework import viewsets
+from django.contrib.auth.models import User, Group, Permission
+from rest_framework import viewsets, generics
 from rest_framework import permissions
 from driver_training_center_db.serializers import *
 
 
-class RoleViewSet(viewsets.ModelViewSet):
-	"""
-	API endpoint that allows roles to be viewed or edited.
-	"""
-	queryset = Role.objects.all()
-	serializer_class = Role
-	# permission_classes = [permissions.IsAuthenticated]
-
-
-class PermissionViewSet(viewsets.ModelViewSet):
-	"""
-	API endpoint that allows permissions to be viewed or edited.
-	"""
-	queryset = Permission.objects.all()
-	serializer_class = PermissionSerializer
-	# permission_classes = [permissions.IsAuthenticated]
+# class RoleViewSet(viewsets.ModelViewSet):
+# 	"""
+# 	API endpoint that allows roles to be viewed or edited.
+# 	"""
+# 	queryset = Role.objects.all()
+# 	serializer_class = Role
+# 	# permission_classes = [permissions.IsAuthenticated]
+#
+#
+# class PermissionViewSet(viewsets.ModelViewSet):
+# 	"""
+# 	API endpoint that allows permissions to be viewed or edited.
+# 	"""
+# 	queryset = Permission.objects.all()
+# 	serializer_class = PermissionSerializer
+# 	# permission_classes = [permissions.IsAuthenticated]
 
 
 class DrivingLicenseCategoryViewSet(viewsets.ModelViewSet):
@@ -55,9 +56,17 @@ class StudentCourseStatusViewSet(viewsets.ModelViewSet):
 	"""
 	API endpoint that allows students' course statuses to be viewed or edited.
 	"""
-	queryset = StudentCourseStatus.objects.all()
+	# queryset = StudentCourseStatus.objects.filter(student=user)
 	serializer_class = StudentCourseStatusSerializer
-	# permission_classes = [permissions.IsAuthenticated]
+	permission_classes = [permissions.IsAuthenticated]
+
+	def get_queryset(self):
+		user = self.request.user
+		if user.is_superuser:
+			queryset = StudentCourseStatus.objects.all()
+		else:
+			queryset = StudentCourseStatus.objects.filter(student=user)
+		return queryset
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -66,7 +75,7 @@ class UserViewSet(viewsets.ModelViewSet):
 	"""
 	queryset = User.objects.all().order_by('-date_joined')
 	serializer_class = UserSerializer
-	permission_classes = [permissions.IsAuthenticated]
+	permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -75,4 +84,13 @@ class GroupViewSet(viewsets.ModelViewSet):
 	"""
 	queryset = Group.objects.all()
 	serializer_class = GroupSerializer
-	permission_classes = [permissions.IsAuthenticated]
+	permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+
+class PermissionViewSet(viewsets.ModelViewSet):
+	"""
+	API endpoint that allows permissions to be viewed or edited.
+	"""
+	queryset = Permission.objects.all()
+	serializer_class = PermissionSerializer
+	permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
