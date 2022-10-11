@@ -1,18 +1,6 @@
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, Permission
 from driver_training_center_db.models import *
 from rest_framework import serializers
-
-
-class RoleSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Role
-        fields = ['url', 'name']
-
-
-class PermissionSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Permission
-        fields = ['url', 'name']
 
 
 class DrivingLicenseCategorySerializer(serializers.HyperlinkedModelSerializer):
@@ -34,7 +22,7 @@ class LessonSerializer(serializers.HyperlinkedModelSerializer):
                   'start_date', 'end_date']
 
 
-class StudentCourseStatusSerializer(serializers.HyperlinkedModelSerializer):
+class StudentCourseStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentCourseStatus
         fields = ['url', 'student', 'course', 'paid_money',
@@ -45,10 +33,26 @@ class StudentCourseStatusSerializer(serializers.HyperlinkedModelSerializer):
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ['url', 'username', 'email', 'groups']
+        fields = ['url', 'username', 'email', 'groups', 'password']
+
+    def save(self):
+        user = User(
+            username=self.validated_data['username'],
+            email=self.validated_data['email']
+        )
+        password = self.validated_data['password']
+        user.set_password(password)
+        user.save()
+        return user
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Group
+        fields = ['url', 'name', 'permissions']
+
+
+class PermissionSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Permission
         fields = ['url', 'name']
