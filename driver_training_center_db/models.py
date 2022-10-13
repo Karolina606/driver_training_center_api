@@ -2,22 +2,6 @@ from django.contrib.auth.models import User
 from django.db import models
 
 
-# class Role(models.Model):
-# 	name = models.CharField(max_length=200, null=False)
-# 	users = models.ManyToManyField(User, related_name="user_role")
-#
-# 	class Meta:
-# 		db_table = "role"
-#
-#
-# class Permission(models.Model):
-# 	name = models.CharField(max_length=200, null=False)
-# 	roles = models.ManyToManyField(Role, related_name="role_permission")
-#
-# 	class Meta:
-# 		db_table = "permission"
-
-
 class DrivingLicenseCategory(models.Model):
 	name = models.CharField(max_length=200, null=False)
 	theory_full_time = models.DecimalField(max_digits=100, decimal_places=0, null=False)
@@ -66,7 +50,7 @@ class Lesson(models.Model):
 				f' {self.instructor.last_name}, start: {self.start_date.ctime()}, end: {self.end_date.ctime()}'
 
 
-class StudentCourseStatus(models.Model):
+class CourseStatus(models.Model):
 	student = models.ForeignKey(User, related_name="student_course_status", on_delete=models.CASCADE, null=False)
 	course = models.ForeignKey(Course, related_name="course_status_for_student", on_delete=models.CASCADE, null=False)
 	paid_money = models.DecimalField(max_digits=6, decimal_places=2, null=False)
@@ -76,4 +60,4 @@ class StudentCourseStatus(models.Model):
 	lessons = models.ManyToManyField(Lesson, related_name="lesson_student_course_status")
 
 	class Meta:
-		db_table = "student_course_status"
+		db_table = "course_status"

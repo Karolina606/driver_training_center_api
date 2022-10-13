@@ -17,23 +17,26 @@ from django.contrib import admin
 
 from django.urls import include, path
 from rest_framework import routers
-from driver_training_center_db import views
+from rest_framework_swagger.views import get_swagger_view
+
+from driver_training_center_db.views import *
+from accounts.views import *
 
 router = routers.DefaultRouter()
-router.register(r'users', views.UserViewSet)
-router.register(r'groups', views.GroupViewSet)
-# router.register(r'roles', views.RoleViewSet)
-router.register(r'permissions', views.PermissionViewSet)
-router.register(r'driving_license_categories', views.DrivingLicenseCategoryViewSet)
-router.register(r'courses', views.CourseViewSet)
-router.register(r'lessons', views.LessonViewSet)
-router.register(r'student_course_status', views.StudentCourseStatusViewSet, basename="studentcoursestatus")
+router.register(r'users', UserViewSet)
+router.register(r'groups', GroupViewSet)
+router.register(r'permissions', PermissionViewSet)
+router.register(r'driving_license_categories', DrivingLicenseCategoryViewSet)
+router.register(r'courses', CourseViewSet)
+router.register(r'lessons', LessonViewSet)
+router.register(r'student_course_status', CourseStatusViewSet, basename="coursestatus")
 
-# Wire up our API using automatic URL routing.
-# Additionally, we include login URLs for the browsable API.
+schema_view = get_swagger_view(title='Driver training center API')
+
 urlpatterns = [
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    path('admin/', admin.site.urls)
+    path('admin/', admin.site.urls),
+    path('swagger', schema_view)
 ]
 

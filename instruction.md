@@ -17,3 +17,6 @@ What to do, to generate UML diagram:
   ```
 * Install pydotplus and graphviz: `pip install pydotplus`, `python -m pip install pydotplus`,
 * Install graphviz: `pip install pygraphviz`, `python -m pip install pygraphviz` or for Windows: [pygraphviz](https://pygraphviz.github.io/documentation/stable/install.html])
+
+What to do, to use swagger:
+* Install swagger for python: `pip install django-rest-swagger`, `python -m pip install django-rest-swagger`
