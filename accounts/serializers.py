@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User, Group, Permission
 from rest_framework import serializers
+from rest_framework.serializers import raise_errors_on_nested_writes
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -15,7 +16,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
             'password': {'required': False, 'write_only': True}
         }
 
-    def save(self):
+    def create(self, validated_data):
         user = User(
             username=self.validated_data['username'],
             email=self.validated_data['email'],
@@ -27,14 +28,47 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         user.save()
         user.groups.set(self.validated_data['groups'])
         user.user_permissions.set(self.validated_data['permissions'])
+        if 'admin' in self.validated_data['groups']:
+            user.is_superuser = True
+            user.is_staff = True
         user.save()
         return user
+
+    def update(self, instance, validated_data):
+        raise_errors_on_nested_writes('update', self, validated_data)
+
+        for attr, value in validated_data.items():
+            if attr == 'groups':
+                instance.groups.add(value)
+                if 'admin' in self.validated_data['groups']:
+                    instance.is_superuser = True
+                    instance.is_staff = True
+            elif attr == 'permissions':
+                instance.user_permissions.add(value)
+            else:
+                setattr(instance, attr, value)
+        instance.save()
+
+        return instance
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Group
         fields = ['url', 'name', 'permissions']
+        extra_kwargs = {
+            'name': {'required': False},
+            'permissions': {'required': False}
+        }
+
+    def update(self, instance, validated_data):
+        raise_errors_on_nested_writes('update', self, validated_data)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
 
     def save(self):
         group = Group(name=self.validated_data['name'])
@@ -48,3 +82,12 @@ class PermissionSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Permission
         fields = ['url', 'name']
+
+    def update(self, instance, validated_data):
+        raise_errors_on_nested_writes('update', self, validated_data)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance

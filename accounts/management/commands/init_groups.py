@@ -1,40 +1,6 @@
 from django.contrib.auth.models import Group, Permission
 
 
-# def add_admin_perm():
-# 	admin_group, created = Group.objects.get_or_create(name='admin')
-# 	proj_add_perm = Permission.objects.all()
-# 	admin_group.permissions.add(proj_add_perm)
-#
-#
-# def add_instructor_perm():
-# 	instructor_group, created = Group.objects.get_or_create(name='instructor')
-# 	proj_add_perm = [
-# 		Permission.objects.get("Can view driving license category"),
-# 		Permission.objects.get("Can view course"),
-# 		Permission.objects.get("Can add lesson"),
-# 		Permission.objects.get("Can change lesson"),
-# 		Permission.objects.get("Can change lesson"),
-# 		Permission.objects.get("Can delete lesson"),
-# 		Permission.objects.get("Can view lesson"),
-# 		Permission.objects.get("Can add student course status"),
-# 		Permission.objects.get("Can view user"),
-# 	]
-# 	instructor_group.permissions.add(proj_add_perm)
-#
-#
-# def add_student_perm():
-# 	student_group, created = Group.objects.get_or_create(name='student')
-# 	proj_add_perm = [
-# 		Permission.objects.get("Can view driving license category"),
-# 		Permission.objects.get("Can view course"),
-# 		Permission.objects.get("Can view lesson"),
-# 		Permission.objects.get("Can add student course status"),
-# 		Permission.objects.get("Can view user"),
-# 		Permission.objects.get("Can change user"),
-# 	]
-# 	student_group.permissions.add(proj_add_perm)
-
 def add_admin_perm():
 	admin_group, created = Group.objects.get_or_create(name='admin')
 	proj_add_perm = Permission.objects.all()
