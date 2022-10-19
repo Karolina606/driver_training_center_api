@@ -24,3 +24,8 @@ What to do, to use swagger:
 
 What to do, to setup groups, permissions and driving licesne categories:
 * Run django management scripts: `python manage.py init_groups` and `python manage.py init_driving_license_categories`
+
+
+What to do, to add authorization by token: 
+* Install `pip install djangorestframework django-cors-headers==3.11.0 djangorestframework-simplejwt==5.0.0 PyJWT==2.3.0`, 
+  `python -m pip install djangorestframework django-cors-headers==3.11.0 djangorestframework-simplejwt==5.0.0 PyJWT==2.3.0`

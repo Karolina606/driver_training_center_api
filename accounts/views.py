@@ -1,11 +1,14 @@
 from django.contrib.auth.models import User, Group, Permission
 from django.shortcuts import render
-from rest_framework import viewsets, permissions
-from rest_framework.decorators import action
+from rest_framework import viewsets, permissions, generics
+from rest_framework.decorators import action, api_view
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from accounts.models import UserGroupChecker
-from accounts.serializers import UserSerializer, GroupSerializer, PermissionSerializer
+from accounts.serializers import UserSerializer, GroupSerializer, PermissionSerializer, MyTokenObtainPairSerializer, \
+	RegisterSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -77,3 +80,24 @@ class PermissionViewSet(viewsets.ModelViewSet):
 	queryset = Permission.objects.all()
 	serializer_class = PermissionSerializer
 	permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+
+class MyTokenObtainPairView(TokenObtainPairView):
+	serializer_class = MyTokenObtainPairSerializer
+
+
+class RegisterView(generics.CreateAPIView):
+	queryset = User.objects.all()
+	permission_classes = (AllowAny,)
+	serializer_class = RegisterSerializer
+
+
+@api_view(['GET'])
+def getRoutes(request):
+	routes = [
+		'/accounts/token/',
+		'/accounts/register/',
+		'/accounts/token/refresh/'
+	]
+	return Response(routes)
+
