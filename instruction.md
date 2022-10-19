@@ -20,3 +20,7 @@ What to do, to generate UML diagram:
 
 What to do, to use swagger:
 * Install swagger for python: `pip install django-rest-swagger`, `python -m pip install django-rest-swagger`
+
+
+What to do, to setup groups, permissions and driving licesne categories:
+* Run django management scripts: `python manage.py init_groups` and `python manage.py init_driving_license_categories`
