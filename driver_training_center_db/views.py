@@ -1,5 +1,7 @@
 from rest_framework import viewsets, generics, permissions
 from django.contrib.auth.models import User, Group, Permission
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from accounts.models import UserGroupChecker
 from driver_training_center_db.serializers import *
@@ -106,6 +108,13 @@ class CourseStatusViewSet(viewsets.ModelViewSet):
 		elif UserGroupChecker.is_student(user):
 			queryset = CourseStatus.objects.filter(student=user)
 		return queryset
+
+
+	@action(detail=True, methods=['get'])
+	def get_by_lesson_id(self, request, pk=None):
+		data = CourseStatus.objects.filter(lessons__in=pk).values()
+		return Response(data)
+
 
 	def get_permissions(self):
 		"""

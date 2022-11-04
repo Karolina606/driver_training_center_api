@@ -7,7 +7,7 @@ from rest_framework import serializers
 class DrivingLicenseCategorySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DrivingLicenseCategory
-        fields = ['url', 'name', 'theory_full_time', 'practice_full_time']
+        fields = ['url', 'id', 'name', 'theory_full_time', 'practice_full_time']
         extra_kwargs = {
             'name': {'required': False},
             'theory_full_time': {'required': False},
@@ -27,7 +27,7 @@ class DrivingLicenseCategorySerializer(serializers.HyperlinkedModelSerializer):
 class CourseSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Course
-        fields = ['url', 'driving_license_category', 'start_date']
+        fields = ['url', 'id', 'driving_license_category', 'start_date']
         extra_kwargs = {
             'driving_license_category': {'required': False},
             'start_date': {'required': False}
@@ -46,7 +46,7 @@ class CourseSerializer(serializers.HyperlinkedModelSerializer):
 class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
-        fields = ['url', 'instructor', 'course', 'type',
+        fields = ['url', 'id', 'instructor', 'course', 'type',
                   'start_date', 'end_date']
         extra_kwargs = {
             'instructor': {'required': False},

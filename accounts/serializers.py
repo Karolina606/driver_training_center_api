@@ -1,3 +1,5 @@
+from abc import ABC
+
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
@@ -7,16 +9,23 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     password = serializers.CharField(style={'input_type': 'password'})
+    # password2 = serializers.CharField(style={'input_type': 'password'})
 
     class Meta:
         model = User
-        fields = ['url', 'username', 'email', 'first_name', 'last_name', 'groups', 'password']
+        fields = ['url', 'id', 'username', 'email', 'first_name', 'last_name', 'groups', 'password']
         extra_kwargs = {
             'username': {'required': False},
             'email': {'required': False},
             'groups': {'required': False},
             'password': {'required': False, 'write_only': True}
         }
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."})
+        return attrs
 
     def create(self, validated_data):
         user = User(
@@ -107,8 +116,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
-        write_only=True, required=True, validators=[validate_password])
-    password2 = serializers.CharField(write_only=True, required=True)
+        write_only=True, required=True, validators=[validate_password], style={'input_type': 'password'})
+    password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
 
     class Meta:
         model = User

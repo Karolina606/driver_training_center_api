@@ -37,6 +37,15 @@ class UserViewSet(viewsets.ModelViewSet):
 		return Response()
 
 	@action(detail=True, methods=['post'])
+	def grand_admin(self, request, pk=None):
+		user = User.objects.get(id=pk)
+		user.groups.add(Group.objects.get(name='admin'))
+		user.is_superuser = True
+		user.is_staff = True
+		user.save()
+		return Response()
+
+	@action(detail=True, methods=['post'])
 	def grand_instructor(self, request, pk=None):
 		user = User.objects.get(id=pk)
 		user.groups.add(Group.objects.get(name='instructor'))
@@ -46,6 +55,8 @@ class UserViewSet(viewsets.ModelViewSet):
 	@action(detail=True, methods=['post'])
 	def grand_student(self, request, pk=None):
 		user = User.objects.get(id=pk)
+		print(user)
+		print(user.username)
 		user.groups.add(Group.objects.get(name='student'))
 		user.save()
 		return Response()
@@ -57,7 +68,7 @@ class UserViewSet(viewsets.ModelViewSet):
 		permission_classes = []
 		if self.action in ('list', 'retrieve', 'update', 'partial_update', 'destroy'):
 			permission_classes = [permissions.IsAuthenticated]
-		elif self.action == 'grand_admin':
+		elif self.action in ('grand_admin', "grand_instructor", 'grand_student'):
 			permission_classes = [permissions.IsAdminUser]
 		else:
 			pass
