@@ -83,7 +83,7 @@ class LessonSerializer(serializers.ModelSerializer):
 class CourseStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseStatus
-        fields = ['url', 'student', 'course', 'paid_money',
+        fields = ['url', 'id', 'student', 'course', 'paid_money',
                   'is_course_paid', 'is_internal_theoretical_exam_passed',
                   'is_internal_practical_exam_passed', 'lessons']
         extra_kwargs = {

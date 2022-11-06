@@ -109,10 +109,18 @@ class CourseStatusViewSet(viewsets.ModelViewSet):
 			queryset = CourseStatus.objects.filter(student=user)
 		return queryset
 
+	@action(detail=True, methods=['post'], name='add_lesson_to_stu_course')
+	def add_lesson_to_stu_course(self, request, pk=None, *args, **kwargs):
+		course_status = CourseStatus.objects.get(id=pk)
+		lesson = Lesson.objects.get(id=int(kwargs['lesson']))
 
-	@action(detail=True, methods=['get'])
+		course_status.lessons.add(lesson)
+		course_status.save()
+		return Response()
+
+	@action(detail=True, methods=['get'], name='get_by_lesson_id')
 	def get_by_lesson_id(self, request, pk=None):
-		data = CourseStatus.objects.filter(lessons__in=pk).values()
+		data = CourseStatus.objects.filter(lessons=pk).values()
 		return Response(data)
 
 

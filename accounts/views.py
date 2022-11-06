@@ -27,7 +27,7 @@ class UserViewSet(viewsets.ModelViewSet):
 			queryset = User.objects.filter(id=user.id)
 		return queryset
 
-	@action(detail=True, methods=['post'])
+	@action(detail=True, methods=['post'], name='grand_admin')
 	def grand_admin(self, request, pk=None):
 		user = User.objects.get(id=pk)
 		user.groups.add(Group.objects.get(name='admin'))
@@ -36,42 +36,48 @@ class UserViewSet(viewsets.ModelViewSet):
 		user.save()
 		return Response()
 
-	@action(detail=True, methods=['post'])
-	def grand_admin(self, request, pk=None):
-		user = User.objects.get(id=pk)
-		user.groups.add(Group.objects.get(name='admin'))
-		user.is_superuser = True
-		user.is_staff = True
-		user.save()
-		return Response()
-
-	@action(detail=True, methods=['post'])
+	@action(detail=True, methods=['post'], name='grand_instructor')
 	def grand_instructor(self, request, pk=None):
 		user = User.objects.get(id=pk)
 		user.groups.add(Group.objects.get(name='instructor'))
 		user.save()
 		return Response()
 
-	@action(detail=True, methods=['post'])
+	@action(detail=True, methods=['post'], name='grand_student')
 	def grand_student(self, request, pk=None):
 		user = User.objects.get(id=pk)
-		print(user)
-		print(user.username)
 		user.groups.add(Group.objects.get(name='student'))
 		user.save()
 		return Response()
+
+	@action(detail=False, methods=['get'], name='instructors')
+	def instructors(self, request):
+		users = User.objects.filter(groups=Group.objects.get(name='instructor')).values()
+		return Response(users)
+
+	@action(detail=False, methods=['get'], name='students')
+	def students(self, request):
+		users = User.objects.filter(groups=Group.objects.get(name='student')).values()
+		return Response(users)
+
+	@action(detail=False, methods=['get'], name='admins')
+	def admins(self, request):
+		users = User.objects.filter(groups=Group.objects.get(name='admin')).values()
+		return Response(users)
 
 	def get_permissions(self):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
+
 		permission_classes = []
 		if self.action in ('list', 'retrieve', 'update', 'partial_update', 'destroy'):
 			permission_classes = [permissions.IsAuthenticated]
-		elif self.action in ('grand_admin', "grand_instructor", 'grand_student'):
+		elif self.action in ('grand_admin', 'grand_instructor', 'grand_student'):
 			permission_classes = [permissions.IsAdminUser]
 		else:
 			pass
+		# print([permission() for permission in permission_classes])
 		return [permission() for permission in permission_classes]
 
 
