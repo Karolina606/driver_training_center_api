@@ -18,7 +18,7 @@ class DrivingLicenseCategoryViewSet(viewsets.ModelViewSet):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
-		if self.action == 'list':
+		if self.action in ('list', 'retrieve'):
 			permission_classes = [permissions.IsAuthenticated]
 		else:
 			permission_classes = [permissions.IsAdminUser]
@@ -47,7 +47,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
-		if self.action == 'list':
+		if self.action in ('list', 'retrieve', 'update', 'partial_update', 'destroy'):
 			permission_classes = [permissions.IsAuthenticated]
 		else:
 			permission_classes = [permissions.IsAdminUser]
@@ -60,7 +60,7 @@ class LessonViewSet(viewsets.ModelViewSet):
 	"""
 	queryset = Lesson.objects.all()
 	serializer_class = LessonSerializer
-	# permission_classes = [permissions.IsAuthenticated]
+	permission_classes = [permissions.IsAuthenticated]
 
 	def get_queryset(self):
 		queryset = None
@@ -71,14 +71,15 @@ class LessonViewSet(viewsets.ModelViewSet):
 			queryset = Lesson.objects.filter(instructor=user)
 		elif UserGroupChecker.is_student(user):
 			course_status = CourseStatus.objects.get(student=user)
-			queryset = Lesson.objects.filter(lesson_course_status=course_status.course_id)
+			queryset = Lesson.objects.filter(lesson_course_status=course_status)
+			print(queryset)
 		return queryset
 
 	def get_permissions(self):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
-		if self.action == 'list':
+		if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
 			permission_classes = [permissions.IsAuthenticated]
 		else:
 			permission_classes = [permissions.DjangoModelPermissions]
@@ -123,6 +124,10 @@ class CourseStatusViewSet(viewsets.ModelViewSet):
 		data = CourseStatus.objects.filter(lessons=pk).values()
 		return Response(data)
 
+	@action(detail=True, methods=['get'], name='get_by_course_id')
+	def get_by_course_id(self, request, pk=None):
+		data = CourseStatus.objects.filter(course_id=pk).values()
+		return Response(data)
 
 	def get_permissions(self):
 		"""

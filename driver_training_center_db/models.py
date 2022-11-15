@@ -57,7 +57,7 @@ class CourseStatus(models.Model):
 	is_course_paid = models.BooleanField(default=False, null=True)
 	is_internal_theoretical_exam_passed = models.BooleanField(default=False, null=True)
 	is_internal_practical_exam_passed = models.BooleanField(default=False, null=True)
-	lessons = models.ManyToManyField(Lesson, related_name="lesson_course_status", null=True)
+	lessons = models.ManyToManyField(Lesson, related_name="lesson_course_status")
 
 	class Meta:
 		db_table = "course_status"

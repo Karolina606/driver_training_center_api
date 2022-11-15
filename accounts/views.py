@@ -65,19 +65,26 @@ class UserViewSet(viewsets.ModelViewSet):
 		users = User.objects.filter(groups=Group.objects.get(name='admin')).values()
 		return Response(users)
 
+	@action(detail=True, methods=['get'], name='name_of_user')
+	def name_of_user(self, request, pk=None):
+		user = User.objects.get(id=pk)
+		username = user.username
+		first_name = user.first_name
+		last_name = user.last_name
+		return Response({'username': username, 'first_name': first_name, 'last_name': last_name})
+
 	def get_permissions(self):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
 
 		permission_classes = []
-		if self.action in ('list', 'retrieve', 'update', 'partial_update', 'destroy'):
+		if self.action in ('list', 'retrieve', 'update', 'partial_update', 'destroy', 'name_of_user'):
 			permission_classes = [permissions.IsAuthenticated]
 		elif self.action in ('grand_admin', 'grand_instructor', 'grand_student'):
 			permission_classes = [permissions.IsAdminUser]
 		else:
 			pass
-		# print([permission() for permission in permission_classes])
 		return [permission() for permission in permission_classes]
 
 
