@@ -3,7 +3,7 @@ from django.contrib.auth.models import User, Group, Permission
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from accounts.models import UserGroupChecker
+from accounts.models import UserGroupChecker, isInstructor
 from driver_training_center_db.serializers import *
 
 
@@ -79,8 +79,10 @@ class LessonViewSet(viewsets.ModelViewSet):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
-		if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+		if self.action == 'retrieve':
 			permission_classes = [permissions.IsAuthenticated]
+		elif self.action in ('list', 'update', 'partial_update', 'destroy'):
+			permission_classes = (permissions.IsAdminUser | isInstructor,)
 		else:
 			permission_classes = [permissions.DjangoModelPermissions]
 		return [permission() for permission in permission_classes]
@@ -110,7 +112,7 @@ class CourseStatusViewSet(viewsets.ModelViewSet):
 			queryset = CourseStatus.objects.filter(student=user)
 		return queryset
 
-	@action(detail=True, methods=['post'], name='add_lesson_to_stu_course')
+	@action(detail=True, methods=['put'], name='add_lesson_to_stu_course')
 	def add_lesson_to_stu_course(self, request, pk=None, *args, **kwargs):
 		course_status = CourseStatus.objects.get(id=pk)
 		lesson = Lesson.objects.get(id=int(kwargs['lesson']))
@@ -121,7 +123,11 @@ class CourseStatusViewSet(viewsets.ModelViewSet):
 
 	@action(detail=True, methods=['get'], name='get_by_lesson_id')
 	def get_by_lesson_id(self, request, pk=None):
-		data = CourseStatus.objects.filter(lessons=pk).values()
+		if UserGroupChecker.is_student(request.user):
+			student_id = User.objects.get(username=request.user).id
+			data = CourseStatus.objects.filter(lessons=pk).values().filter(student_id=student_id)
+		else:
+			data = CourseStatus.objects.filter(lessons=pk).values()
 		return Response(data)
 
 	@action(detail=True, methods=['get'], name='get_by_course_id')
@@ -133,10 +139,10 @@ class CourseStatusViewSet(viewsets.ModelViewSet):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
-		if self.action == 'list':
+		if self.action == 'retrieve':
 			permission_classes = [permissions.IsAuthenticated]
+		elif self.action in ('list', 'get_by_lesson_id', 'update', 'partial_update', 'destroy' 'add_lesson_to_stu_course', 'get_by_course_id'):
+			permission_classes = (permissions.IsAdminUser | isInstructor,)
 		else:
 			permission_classes = [permissions.IsAdminUser]
 		return [permission() for permission in permission_classes]
-
-
