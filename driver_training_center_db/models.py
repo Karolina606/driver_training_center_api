@@ -53,10 +53,10 @@ class Lesson(models.Model):
 class CourseStatus(models.Model):
 	student = models.ForeignKey(User, related_name="student_course_status", on_delete=models.CASCADE, null=False)
 	course = models.ForeignKey(Course, related_name="course_status_for_student", on_delete=models.CASCADE, null=False)
-	paid_money = models.DecimalField(max_digits=6, decimal_places=2, null=False)
-	is_course_paid = models.BooleanField(default=False, null=False)
-	is_internal_theoretical_exam_passed = models.BooleanField(default=False, null=False)
-	is_internal_practical_exam_passed = models.BooleanField(default=False, null=False)
+	paid_money = models.DecimalField(max_digits=6, decimal_places=2, null=True)
+	is_course_paid = models.BooleanField(default=False, null=True)
+	is_internal_theoretical_exam_passed = models.BooleanField(default=False, null=True)
+	is_internal_practical_exam_passed = models.BooleanField(default=False, null=True)
 	lessons = models.ManyToManyField(Lesson, related_name="lesson_course_status")
 
 	class Meta:

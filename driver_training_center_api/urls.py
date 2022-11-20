@@ -40,5 +40,6 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('admin/', admin.site.urls),
     path('swagger', schema_view),
-    path('accounts/', include('accounts.urls'))
+    path('accounts/', include('accounts.urls')),
+    path('student_course_status/<int:pk>/add_lesson_to_stu_course/<int:lesson>/', CourseStatusViewSet.as_view({"post": "add_lesson_to_stu_course"}))
 ]

@@ -1,7 +1,11 @@
+import datetime
+
 from rest_framework import viewsets, generics, permissions
 from django.contrib.auth.models import User, Group, Permission
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-from accounts.models import UserGroupChecker
+from accounts.models import UserGroupChecker, isInstructor
 from driver_training_center_db.serializers import *
 
 
@@ -16,7 +20,7 @@ class DrivingLicenseCategoryViewSet(viewsets.ModelViewSet):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
-		if self.action == 'list':
+		if self.action in ('list', 'retrieve'):
 			permission_classes = [permissions.IsAuthenticated]
 		else:
 			permission_classes = [permissions.IsAdminUser]
@@ -37,15 +41,15 @@ class CourseViewSet(viewsets.ModelViewSet):
 		if user.is_superuser or UserGroupChecker.is_admin(user) or UserGroupChecker.is_instructor(user):
 			queryset = Course.objects.all()
 		elif UserGroupChecker.is_student(user):
-			course_status = CourseStatus.objects.get(student=user)
-			queryset = Course.objects.filter(course_status_for_student=course_status)
-		return queryset
+			course_statuses = CourseStatus.objects.filter(student=user)
+			queryset = Course.objects.filter(course_status_for_student__in=course_statuses)
+		return queryset.order_by('-start_date')
 
 	def get_permissions(self):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
-		if self.action == 'list':
+		if self.action in ('list', 'retrieve', 'update', 'partial_update', 'destroy'):
 			permission_classes = [permissions.IsAuthenticated]
 		else:
 			permission_classes = [permissions.IsAdminUser]
@@ -58,7 +62,7 @@ class LessonViewSet(viewsets.ModelViewSet):
 	"""
 	queryset = Lesson.objects.all()
 	serializer_class = LessonSerializer
-	# permission_classes = [permissions.IsAuthenticated]
+	permission_classes = [permissions.IsAuthenticated]
 
 	def get_queryset(self):
 		queryset = None
@@ -68,16 +72,38 @@ class LessonViewSet(viewsets.ModelViewSet):
 		elif UserGroupChecker.is_instructor(user):
 			queryset = Lesson.objects.filter(instructor=user)
 		elif UserGroupChecker.is_student(user):
-			course_status = CourseStatus.objects.get(student=user)
-			queryset = Lesson.objects.filter(lesson_course_status=course_status.course_id)
-		return queryset
+			course_statuses = CourseStatus.objects.filter(student=user)
+			queryset = Lesson.objects.filter(lesson_course_status__in=course_statuses)
+		queryset = queryset.filter(end_date__range=(datetime.datetime.now(tz=datetime.timezone.utc),
+													datetime.datetime.now(
+														tz=datetime.timezone.utc) + datetime.timedelta(days=365)))
+		return queryset.order_by('start_date')
+
+	@action(detail=False, methods=['get'], name='get_ended_lessons')
+	def get_ended_lessons(self, request):
+		if UserGroupChecker.is_student(request.user):
+			course_statuses = CourseStatus.objects.filter(student=request.user)
+			data = Lesson.objects.filter(lesson_course_status__in=course_statuses)
+		elif UserGroupChecker.is_instructor(request.user):
+			instructor_id = User.objects.get(username=request.user).id
+			data = Lesson.objects.filter(instructor_id=instructor_id)
+		else:
+			data = Lesson.objects.all()
+		data = data.order_by('-start_date').filter(
+				end_date__range=(datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=365),
+								datetime.datetime.now(tz=datetime.timezone.utc))).values()
+		return Response(data)
+
+	# return queryset
 
 	def get_permissions(self):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
-		if self.action == 'list':
+		if self.action in ('retrieve', 'get_ended_lessons'):
 			permission_classes = [permissions.IsAuthenticated]
+		elif self.action in ('list', 'update', 'partial_update', 'destroy'):
+			permission_classes = (permissions.IsAdminUser | isInstructor,)
 		else:
 			permission_classes = [permissions.DjangoModelPermissions]
 		return [permission() for permission in permission_classes]
@@ -105,16 +131,70 @@ class CourseStatusViewSet(viewsets.ModelViewSet):
 			queryset = CourseStatus.objects.filter(id__in=course_statuses_id)
 		elif UserGroupChecker.is_student(user):
 			queryset = CourseStatus.objects.filter(student=user)
-		return queryset
+		return queryset.order_by('-id')
+
+	@action(detail=True, methods=['put'], name='add_lesson_to_stu_course')
+	def add_lesson_to_stu_course(self, request, pk=None, *args, **kwargs):
+		course_status = CourseStatus.objects.get(id=pk)
+		lesson = Lesson.objects.get(id=int(kwargs['lesson']))
+
+		course_status.lessons.add(lesson)
+		course_status.save()
+		return Response()
+
+	@action(detail=True, methods=['get'], name='get_by_lesson_id')
+	def get_by_lesson_id(self, request, pk=None):
+		if UserGroupChecker.is_student(request.user):
+			student_id = User.objects.get(username=request.user).id
+			data = CourseStatus.objects.filter(lessons=pk).values().filter(student_id=student_id)
+		else:
+			data = CourseStatus.objects.filter(lessons=pk).values()
+		return Response(data)
+
+	@action(detail=True, methods=['get'], name='get_by_course_id')
+	def get_by_course_id(self, request, pk=None):
+		data = CourseStatus.objects.filter(course_id=pk).values()
+		return Response(data)
+
+	@action(detail=True, methods=['get'], name='get_progress')
+	def get_progress(self, request, pk=None):
+		data = {'theory': 0, 'practice': 0, 'theory_perc': 0, 'practice_perc': 0}
+
+		course_status = CourseStatus.objects.get(id=pk)
+		course = Course.objects.get(id=course_status.course_id)
+		category = DrivingLicenseCategory.objects.get(id=course.driving_license_category.id)
+		all_theory_lessons = Lesson.objects.filter(lesson_course_status=course_status).filter(type='T').filter(
+				end_date__range=(datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=365),
+								datetime.datetime.now(tz=datetime.timezone.utc)))
+		all_practice_lessons = Lesson.objects.filter(lesson_course_status=course_status).filter(type='P').filter(
+				end_date__range=(datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=365),
+								datetime.datetime.now(tz=datetime.timezone.utc)))
+
+		for lesson in all_theory_lessons:
+			print(lesson)
+			data['theory'] += (lesson.end_date - lesson.start_date).seconds//3600
+			print("data_theory " + str(data['theory']))
+
+		for lesson in all_practice_lessons:
+			print(lesson)
+			data['practice'] += (lesson.end_date - lesson.start_date).seconds//3600
+			print("data_practice " + str(data['practice']))
+
+		data['theory_perc'] = data['theory'] / float(category.theory_full_time) * 100.0
+		data['practice_perc'] = data['practice'] / float(category.practice_full_time) * 100.0
+
+		return Response(data)
 
 	def get_permissions(self):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
-		if self.action == 'list':
+		if self.action in ('retrieve', 'get_progress'):
 			permission_classes = [permissions.IsAuthenticated]
+		elif self.action in (
+		'list', 'get_by_lesson_id', 'update', 'partial_update', 'destroy' 'add_lesson_to_stu_course',
+		'get_by_course_id'):
+			permission_classes = (permissions.IsAdminUser | isInstructor,)
 		else:
 			permission_classes = [permissions.IsAdminUser]
 		return [permission() for permission in permission_classes]
-
-
