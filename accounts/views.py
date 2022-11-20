@@ -25,7 +25,7 @@ class UserViewSet(viewsets.ModelViewSet):
 			queryset = User.objects.all()
 		elif UserGroupChecker.is_instructor(user) or UserGroupChecker.is_student(user):
 			queryset = User.objects.filter(id=user.id)
-		return queryset
+		return queryset.order_by('-date_joined')
 
 	@action(detail=True, methods=['post'], name='grand_admin')
 	def grand_admin(self, request, pk=None):
