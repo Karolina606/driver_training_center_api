@@ -4,6 +4,7 @@ from rest_framework import viewsets, generics, permissions
 from django.contrib.auth.models import User, Group, Permission
 from rest_framework.decorators import action
 from rest_framework.response import Response
+import django.http
 
 from accounts.models import UserGroupChecker, isInstructor
 from driver_training_center_db.serializers import *
@@ -74,9 +75,7 @@ class LessonViewSet(viewsets.ModelViewSet):
 		elif UserGroupChecker.is_student(user):
 			course_statuses = CourseStatus.objects.filter(student=user)
 			queryset = Lesson.objects.filter(lesson_course_status__in=course_statuses)
-		queryset = queryset.filter(end_date__range=(datetime.datetime.now(tz=datetime.timezone.utc),
-													datetime.datetime.now(
-														tz=datetime.timezone.utc) + datetime.timedelta(days=365)))
+		queryset = queryset.filter(end_date__gte=(datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=60)))
 		return queryset.order_by('start_date')
 
 	@action(detail=False, methods=['get'], name='get_ended_lessons')
@@ -90,8 +89,7 @@ class LessonViewSet(viewsets.ModelViewSet):
 		else:
 			data = Lesson.objects.all()
 		data = data.order_by('-start_date').filter(
-				end_date__range=(datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=365),
-								datetime.datetime.now(tz=datetime.timezone.utc))).values()
+			end_date__lt=(datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=60))).values()
 		return Response(data)
 
 	# return queryset
@@ -142,6 +140,18 @@ class CourseStatusViewSet(viewsets.ModelViewSet):
 		course_status.save()
 		return Response()
 
+	@action(detail=True, methods=['delete'], name='delete_lesson_from_stu_course')
+	def delete_lesson_from_stu_course(self, request, pk=None, *args, **kwargs):
+		course_status = CourseStatus.objects.get(id=pk)
+		lesson = Lesson.objects.get(id=int(kwargs['lesson']))
+
+		try:
+			course_status.lessons.remove(lesson)
+			course_status.save()
+			return Response(status=203)
+		except:
+			return Response(status=500)
+
 	@action(detail=True, methods=['get'], name='get_by_lesson_id')
 	def get_by_lesson_id(self, request, pk=None):
 		if UserGroupChecker.is_student(request.user):
@@ -163,38 +173,39 @@ class CourseStatusViewSet(viewsets.ModelViewSet):
 		course_status = CourseStatus.objects.get(id=pk)
 		course = Course.objects.get(id=course_status.course_id)
 		category = DrivingLicenseCategory.objects.get(id=course.driving_license_category.id)
-		all_theory_lessons = Lesson.objects.filter(lesson_course_status=course_status).filter(type='T').filter(
-				end_date__range=(datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=365),
-								datetime.datetime.now(tz=datetime.timezone.utc)))
-		all_practice_lessons = Lesson.objects.filter(lesson_course_status=course_status).filter(type='P').filter(
-				end_date__range=(datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=365),
-								datetime.datetime.now(tz=datetime.timezone.utc)))
+
+		print(datetime.datetime.now())
+
+		all_theory_lessons = Lesson.objects.filter(lesson_course_status=course_status, type='T',
+													end_date__lt=datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=60))
+		all_practice_lessons = Lesson.objects.filter(lesson_course_status=course_status, type='P',
+													end_date__lt=datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=60))
 
 		for lesson in all_theory_lessons:
 			print(lesson)
-			data['theory'] += (lesson.end_date - lesson.start_date).seconds//3600
+			data['theory'] += (lesson.end_date - lesson.start_date).seconds // 3600
 			print("data_theory " + str(data['theory']))
 
 		for lesson in all_practice_lessons:
 			print(lesson)
-			data['practice'] += (lesson.end_date - lesson.start_date).seconds//3600
+			data['practice'] += (lesson.end_date - lesson.start_date).seconds // 3600
 			print("data_practice " + str(data['practice']))
 
 		data['theory_perc'] = data['theory'] / float(category.theory_full_time) * 100.0
 		data['practice_perc'] = data['practice'] / float(category.practice_full_time) * 100.0
-
 		return Response(data)
 
 	def get_permissions(self):
 		"""
 		Instantiates and returns the list of permissions that this view requires.
 		"""
+
 		if self.action in ('retrieve', 'get_progress'):
 			permission_classes = [permissions.IsAuthenticated]
 		elif self.action in (
-		'list', 'get_by_lesson_id', 'update', 'partial_update', 'destroy' 'add_lesson_to_stu_course',
-		'get_by_course_id'):
-			permission_classes = (permissions.IsAdminUser | isInstructor,)
+				'list', 'get_by_lesson_id', 'update', 'partial_update', 'destroy', 'add_lesson_to_stu_course',
+				'get_by_course_id', 'delete_lesson_from_stu_course'):
+			permission_classes = (permissions.IsAdminUser | isInstructor, )
 		else:
 			permission_classes = [permissions.IsAdminUser]
 		return [permission() for permission in permission_classes]

@@ -1,3 +1,5 @@
+from datetime import datetime as dt, timedelta
+
 from rest_framework.serializers import raise_errors_on_nested_writes
 
 from driver_training_center_db.models import *
@@ -54,6 +56,13 @@ class LessonSerializer(serializers.ModelSerializer):
             'start_date': {'required': False},
             'end_date': {'required': False}
         }
+
+    def validate(self, attrs):
+        delta = attrs['end_date'] - attrs['start_date']
+        if attrs['start_date'] > attrs['end_date'] or delta > timedelta(hours=6):
+            raise serializers.ValidationError(
+                {"End date must be past start_date."})
+        return attrs
 
     def create(self, validated_data):
         instructor = self.validated_data['instructor']

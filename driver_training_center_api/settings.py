@@ -46,7 +46,11 @@ INSTALLED_APPS = [
     'rest_framework_swagger',
     'accounts',
     'corsheaders',
+    'pgcrypto'
 ]
+
+PGCRYPTO_DEFAULT_CIPHER = 'AES'
+PGCRYPTO_DEFAULT_KEY = 'secretkey'
 
 
 MIDDLEWARE = [
