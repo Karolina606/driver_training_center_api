@@ -19,7 +19,9 @@ class UserGroupChecker:
 
 class isInstructor(permissions.BasePermission):
 	def has_object_permission(self, request, view, obj):
-		return bool(request.user.groups.filter(name='instructor').exists())
+		print(request.user)
+		print(request.user.groups.filter(name='instructor').exists())
+		return request.user.groups.filter(name='instructor').exists()
 
 
 class isStudent(permissions.BasePermission):

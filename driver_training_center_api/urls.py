@@ -41,5 +41,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('swagger', schema_view),
     path('accounts/', include('accounts.urls')),
-    path('student_course_status/<int:pk>/add_lesson_to_stu_course/<int:lesson>/', CourseStatusViewSet.as_view({"post": "add_lesson_to_stu_course"}))
+    path('student_course_status/<int:pk>/add_lesson_to_stu_course/<int:lesson>/', CourseStatusViewSet.as_view({"post": "add_lesson_to_stu_course"})),
+    path('student_course_status/<int:pk>/delete_lesson_from_stu_course/<int:lesson>/', CourseStatusViewSet.as_view({"delete": "delete_lesson_from_stu_course"}))
 ]

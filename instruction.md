@@ -30,3 +30,9 @@ What to do, to setup groups, permissions and driving licesne categories:
 What to do, to add authorization by token: 
 * Install `pip install djangorestframework django-cors-headers==3.11.0 djangorestframework-simplejwt==5.0.0 PyJWT==2.3.0`, 
   `python -m pip install djangorestframework django-cors-headers==3.11.0 djangorestframework-simplejwt==5.0.0 PyJWT==2.3.0`
+
+What to do, to add encryption:
+* Install `pip install django_cryptography`, `python -m pip install django_cryptography`
+
+What to do, to add encryption:
+* Install `pip install django-pgcrypto`, `python -m pip install django-pgcrypto`

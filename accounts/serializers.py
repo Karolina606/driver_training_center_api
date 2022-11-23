@@ -1,15 +1,16 @@
-from abc import ABC
-
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.serializers import raise_errors_on_nested_writes
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+import re
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     password = serializers.CharField(style={'input_type': 'password'})
     # password2 = serializers.CharField(style={'input_type': 'password'})
+    reg = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!#%*?&]{6,20}$"
+    pattern = re.compile(reg)
 
     class Meta:
         model = User
@@ -25,6 +26,18 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError(
                 {"password": "Password fields didn't match."})
+
+        # validating conditions
+        if re.search(self.pattern, attrs['password']):
+            print("Password is valid.")
+        else:
+            raise serializers.ValidationError(
+                {
+                    "password": "Password must contain at least 8 signs, one small letter, one big letter, number and special sign."})
+
+        if User.objects.filter(email=attrs['email']).exists():
+            raise serializers.ValidationError(
+                {"email": "Email already exists."})
         return attrs
 
     def create(self, validated_data):
@@ -61,6 +74,10 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         instance.save()
 
         return instance
+
+    def save(self, *args, **kwargs):
+        self.user = self.encrypt(self.user)
+        super().save(*args, **kwargs)
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
@@ -119,20 +136,37 @@ class RegisterSerializer(serializers.ModelSerializer):
         write_only=True, required=True, validators=[validate_password], style={'input_type': 'password'})
     password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
 
+    reg = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!#%*?&]{6,20}$"
+    pattern = re.compile(reg)
+
     class Meta:
         model = User
-        fields = ('username', 'password', 'password2')
+        fields = ('username', 'first_name', 'last_name', 'password', 'password2')
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError(
                 {"password": "Password fields didn't match."})
 
+        # validating conditions
+        if re.search(self.pattern, attrs['password']):
+            print("Password is valid.")
+        else:
+            raise serializers.ValidationError(
+                {"password": "Password must contain at least 8 signs, one small letter, one big letter, number and special sign."})
+
+        if User.objects.filter(email=attrs['username']).exists():
+            raise serializers.ValidationError(
+                {"email": "Email already exists."})
+
         return attrs
 
     def create(self, validated_data):
         user = User.objects.create(
-            username=validated_data['username']
+            username=validated_data['username'],
+            email=validated_data['username'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name']
         )
 
         user.set_password(validated_data['password'])

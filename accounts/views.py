@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User, Group, Permission
 from django.shortcuts import render
-from rest_framework import viewsets, permissions, generics
+from rest_framework import viewsets, permissions, generics, status
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -17,18 +17,21 @@ class UserViewSet(viewsets.ModelViewSet):
 	"""
 	queryset = User.objects.all().order_by('-date_joined')
 	serializer_class = UserSerializer
+	permission_classes = [permissions.IsAuthenticated]
 
 	def get_queryset(self):
 		user = self.request.user
 		queryset = None
-		if user.is_superuser or UserGroupChecker.is_admin(user):
+		if user.is_superuser or UserGroupChecker.is_admin(user) or UserGroupChecker.is_instructor(user):
 			queryset = User.objects.all()
-		elif UserGroupChecker.is_instructor(user) or UserGroupChecker.is_student(user):
+		else:
 			queryset = User.objects.filter(id=user.id)
-		return queryset.order_by('-date_joined')
+		if queryset != None:
+			queryset = queryset.order_by('-date_joined')
+		return queryset
 
-	@action(detail=True, methods=['post'], name='grand_admin')
-	def grand_admin(self, request, pk=None):
+	@action(detail=True, methods=['post'], name='grant_admin')
+	def grant_admin(self, request, pk=None):
 		user = User.objects.get(id=pk)
 		user.groups.add(Group.objects.get(name='admin'))
 		user.is_superuser = True
@@ -36,15 +39,15 @@ class UserViewSet(viewsets.ModelViewSet):
 		user.save()
 		return Response()
 
-	@action(detail=True, methods=['post'], name='grand_instructor')
-	def grand_instructor(self, request, pk=None):
+	@action(detail=True, methods=['post'], name='grant_instructor')
+	def grant_instructor(self, request, pk=None):
 		user = User.objects.get(id=pk)
 		user.groups.add(Group.objects.get(name='instructor'))
 		user.save()
 		return Response()
 
-	@action(detail=True, methods=['post'], name='grand_student')
-	def grand_student(self, request, pk=None):
+	@action(detail=True, methods=['post'], name='grant_student')
+	def grant_student(self, request, pk=None):
 		user = User.objects.get(id=pk)
 		user.groups.add(Group.objects.get(name='student'))
 		user.save()
@@ -85,12 +88,10 @@ class UserViewSet(viewsets.ModelViewSet):
 		permission_classes = []
 		if self.action in ('list', 'retrieve'):
 			permission_classes = [permissions.IsAuthenticated]
-		elif self.action in ('retrieve', 'update', 'partial_update', 'destroy', 'name_of_user'):
+		elif self.action in ('update', 'partial_update', 'destroy', 'name_of_user'):
 			permission_classes = (permissions.IsAdminUser | isInstructor,)
-		elif self.action in ('grand_admin', 'grand_instructor', 'grand_student'):
+		elif self.action in ('grant_admin', 'grant_instructor', 'grant_student'):
 			permission_classes = [permissions.IsAdminUser]
-		else:
-			pass
 		return [permission() for permission in permission_classes]
 
 
