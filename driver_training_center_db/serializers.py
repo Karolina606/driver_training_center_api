@@ -5,6 +5,8 @@ from rest_framework.serializers import raise_errors_on_nested_writes
 from driver_training_center_db.models import *
 from rest_framework import serializers
 
+from driver_training_center_db.utils import is_meeting_interfering
+
 
 class DrivingLicenseCategorySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:

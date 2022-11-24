@@ -1,4 +1,5 @@
 import datetime
+import http
 
 from rest_framework import viewsets, generics, permissions
 from django.contrib.auth.models import User, Group, Permission
@@ -92,7 +93,45 @@ class LessonViewSet(viewsets.ModelViewSet):
 			end_date__lt=(datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=60))).values()
 		return Response(data)
 
-	# return queryset
+	# "instructor": instructor,
+	# "course": course,
+	# "type": type,
+	# "start_date": formatData(startDate),
+	# "end_date": formatData(endDate)
+
+	@action(detail=False, methods=['post'], name='add_lesson_with_students')
+	def add_lesson_with_students(self, request):
+		print(request.data)
+		print('######')
+
+		lesson = Lesson(
+				instructor=User.objects.get(id=request.data['instructor']),
+				course=Course.objects.get(id=request.data['course']),
+				type=request.data['type'],
+				start_date=datetime.datetime.strptime(request.data['start_date'], '%Y-%m-%dT%H:%M:%SZ'),
+				end_date=datetime.datetime.strptime(request.data['end_date'], '%Y-%m-%dT%H:%M:%SZ')
+			)
+
+		if request.data['type'] == 'P' and len(request.data['students']) > 1:
+			# return Response({"status": str(http.HTTPStatus.BAD_REQUEST), 'message': 'Cannot add many students to practice lesson'})
+			raise Exception('Cannot add many students to practice lesson')
+
+		if is_meeting_interfering(User.objects.get(id=request.data['instructor']), lesson):
+			raise Exception('Meeting interferes with instructor plans')
+
+		for student_status_id in request.data['students']:
+			student = CourseStatus.objects.get(id=student_status_id).student
+			if is_meeting_interfering(student, lesson):
+				raise Exception('Meeting interferes with student plans')
+
+		lesson.save()
+
+		for student_status_id in request.data['students']:
+			status = CourseStatus.objects.get(id=student_status_id)
+			status.lessons.add(lesson)
+			status.save()
+
+		return Response(http.HTTPStatus.CREATED)
 
 	def get_permissions(self):
 		"""
@@ -100,7 +139,7 @@ class LessonViewSet(viewsets.ModelViewSet):
 		"""
 		if self.action in ('retrieve', 'get_ended_lessons'):
 			permission_classes = [permissions.IsAuthenticated]
-		elif self.action in ('list', 'update', 'partial_update', 'destroy'):
+		elif self.action in ('list', 'update', 'partial_update', 'destroy', 'add_lesson_with_students'):
 			permission_classes = (permissions.IsAdminUser | isInstructor,)
 		else:
 			permission_classes = [permissions.DjangoModelPermissions]
