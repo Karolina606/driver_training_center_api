@@ -3,7 +3,7 @@ from driver_training_center_db.models import DrivingLicenseCategory
 
 def add_driving_license_category():
 	driving_license_category, created = DrivingLicenseCategory.objects.get_or_create(
-		name__iexact='B',
+		name='B',
 		practice_full_time=30,
 		theory_full_time=30
 	)

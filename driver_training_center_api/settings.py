@@ -45,12 +45,8 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework_swagger',
     'accounts',
-    'corsheaders',
-    'pgcrypto'
+    'corsheaders'
 ]
-
-PGCRYPTO_DEFAULT_CIPHER = 'AES'
-PGCRYPTO_DEFAULT_KEY = 'secretkey'
 
 
 MIDDLEWARE = [

@@ -10,6 +10,9 @@ from accounts.models import UserGroupChecker, isInstructor
 from accounts.serializers import UserSerializer, GroupSerializer, PermissionSerializer, MyTokenObtainPairSerializer, \
 	RegisterSerializer
 
+from driver_training_center_api.settings import SECRET_KEY
+from accounts.utils import AESCipher
+
 
 class UserViewSet(viewsets.ModelViewSet):
 	"""
@@ -56,28 +59,39 @@ class UserViewSet(viewsets.ModelViewSet):
 	@action(detail=False, methods=['get'], name='instructors')
 	def instructors(self, request):
 		if UserGroupChecker.is_instructor(request.user):
-			print(request.user)
 			users = User.objects.filter(username=request.user).values()
 		else:
 			users = User.objects.filter(groups=Group.objects.get(name='instructor')).values()
+
+		for instructor in users:
+			instructor['first_name'] = AESCipher(instructor['first_name'], SECRET_KEY).decrypt()
+			instructor['last_name'] = AESCipher(instructor['last_name'], SECRET_KEY).decrypt()
+
 		return Response(users)
 
 	@action(detail=False, methods=['get'], name='students')
 	def students(self, request):
 		users = User.objects.filter(groups=Group.objects.get(name='student')).values()
+		for student in users:
+			student['first_name'] = AESCipher(student['first_name'], SECRET_KEY).decrypt()
+			student['last_name'] = AESCipher(student['last_name'], SECRET_KEY).decrypt()
 		return Response(users)
 
 	@action(detail=False, methods=['get'], name='admins')
 	def admins(self, request):
 		users = User.objects.filter(groups=Group.objects.get(name='admin')).values()
+		for admin in users:
+			admin['first_name'] = AESCipher(admin['first_name'], SECRET_KEY).decrypt()
+			admin['last_name'] = AESCipher(admin['last_name'], SECRET_KEY).decrypt()
+
 		return Response(users)
 
 	@action(detail=True, methods=['get'], name='name_of_user')
 	def name_of_user(self, request, pk=None):
 		user = User.objects.get(id=pk)
 		username = user.username
-		first_name = user.first_name
-		last_name = user.last_name
+		first_name = AESCipher(user.first_name, SECRET_KEY).decrypt()
+		last_name = AESCipher(user.last_name, SECRET_KEY).decrypt()
 		return Response({'username': username, 'first_name': first_name, 'last_name': last_name})
 
 	def get_permissions(self):

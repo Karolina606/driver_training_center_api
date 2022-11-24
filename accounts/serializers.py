@@ -49,7 +49,6 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
             first_name=AESCipher(self.validated_data['first_name'], SECRET_KEY).encrypt(),
             last_name=AESCipher(self.validated_data['last_name'], SECRET_KEY).encrypt()
         )
-        print(user)
         password = self.validated_data['password']
         user.set_password(password)
         user.save()
@@ -84,17 +83,9 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     def to_representation(self, instance):
         """Convert `username` to lowercase."""
         ret = super().to_representation(instance)
-        print("admin: " + str(AESCipher(ret['first_name'], SECRET_KEY).encrypt()))
         ret['first_name'] = AESCipher(ret['first_name'], SECRET_KEY).decrypt()
         ret['last_name'] = AESCipher(ret['last_name'], SECRET_KEY).decrypt()
         return ret
-
-    # def to_internal_value(self, data):
-    #     ret = super().to_internal_value(data)
-    #     ret['first_name'] = AESCipher(ret['first_name'], SECRET_KEY).decrypt()
-    #     ret['last_name'] = AESCipher(ret['last_name'], SECRET_KEY).decrypt()
-    #     return ret
-
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -193,7 +184,6 @@ class RegisterSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Convert `username` to lowercase."""
         ret = super().to_representation(instance)
-        print("admin: " + str(AESCipher(ret['first_name'], SECRET_KEY).encrypt()))
         ret['first_name'] = AESCipher(ret['first_name'], SECRET_KEY).decrypt()
         ret['last_name'] = AESCipher(ret['last_name'], SECRET_KEY).decrypt()
         return ret

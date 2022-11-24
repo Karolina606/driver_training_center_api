@@ -1,5 +1,8 @@
 from django.contrib.auth.models import Group, Permission, User
 
+from accounts.utils import AESCipher
+from driver_training_center_api.settings import SECRET_KEY
+
 
 def add_admin_perm():
 	admin_group, created = Group.objects.get_or_create(name='admin')
@@ -34,8 +37,8 @@ def add_admin_user():
 	admin, created = User.objects.get_or_create(
 		username='admin@admin.com',
 		email='admin@admin.com',
-		first_name='admin',
-		last_name='admin'
+		first_name= AESCipher('admin', SECRET_KEY).encrypt(),
+		last_name= AESCipher('admin', SECRET_KEY).encrypt()
 	)
 	admin.set_password('Admin!123')
 	admin.groups.add(Group.objects.get(name='admin'))
