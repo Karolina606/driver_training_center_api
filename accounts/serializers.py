@@ -4,6 +4,8 @@ from rest_framework import serializers
 from rest_framework.serializers import raise_errors_on_nested_writes
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import re
+from driver_training_center_api.settings import SECRET_KEY
+from accounts.utils import AESCipher
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -44,8 +46,8 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         user = User(
             username=self.validated_data['username'],
             email=self.validated_data['email'],
-            first_name=self.validated_data['first_name'],
-            last_name=self.validated_data['last_name']
+            first_name=AESCipher(self.validated_data['first_name'], SECRET_KEY).encrypt(),
+            last_name=AESCipher(self.validated_data['last_name'], SECRET_KEY).encrypt()
         )
         password = self.validated_data['password']
         user.set_password(password)
@@ -69,16 +71,21 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
                     instance.is_staff = True
             elif attr == 'permissions':
                 instance.user_permissions.add(value)
+            elif attr in ('first_name', 'last_name'):
+                instance.first_name = AESCipher(self.validated_data['first_name'], SECRET_KEY).encrypt(),
+                instance.last_name = AESCipher(self.validated_data['last_name'], SECRET_KEY).encrypt()
             else:
                 setattr(instance, attr, value)
         instance.save()
 
         return instance
 
-    def save(self, *args, **kwargs):
-        self.user = self.encrypt(self.user)
-        super().save(*args, **kwargs)
-
+    def to_representation(self, instance):
+        """Convert `username` to lowercase."""
+        ret = super().to_representation(instance)
+        ret['first_name'] = AESCipher(ret['first_name'], SECRET_KEY).decrypt()
+        ret['last_name'] = AESCipher(ret['last_name'], SECRET_KEY).decrypt()
+        return ret
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -163,13 +170,20 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['username'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
+            username=self.validated_data['username'],
+            email=self.validated_data['username'],
+            first_name=AESCipher(self.validated_data['first_name'], SECRET_KEY).encrypt(),
+            last_name=AESCipher(self.validated_data['last_name'], SECRET_KEY).encrypt()
         )
-
+        print(user)
         user.set_password(validated_data['password'])
         user.save()
 
         return user
+
+    def to_representation(self, instance):
+        """Convert `username` to lowercase."""
+        ret = super().to_representation(instance)
+        ret['first_name'] = AESCipher(ret['first_name'], SECRET_KEY).decrypt()
+        ret['last_name'] = AESCipher(ret['last_name'], SECRET_KEY).decrypt()
+        return ret

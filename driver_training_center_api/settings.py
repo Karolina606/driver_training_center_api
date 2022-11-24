@@ -45,12 +45,8 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework_swagger',
     'accounts',
-    'corsheaders',
-    'pgcrypto'
+    'corsheaders'
 ]
-
-PGCRYPTO_DEFAULT_CIPHER = 'AES'
-PGCRYPTO_DEFAULT_KEY = 'secretkey'
 
 
 MIDDLEWARE = [
@@ -95,7 +91,7 @@ WSGI_APPLICATION = 'driver_training_center_api.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'driver_training_center3',
+        'NAME': 'driver_training_center4',
         'USER': 'postgres',
         'PASSWORD': 'root',
         'HOST': '127.0.0.1',
@@ -128,8 +124,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
 
 USE_I18N = True
 

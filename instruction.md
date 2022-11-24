@@ -36,3 +36,4 @@ What to do, to add encryption:
 
 What to do, to add encryption:
 * Install `pip install django-pgcrypto`, `python -m pip install django-pgcrypto`
+* Install `pip3 install pycryptodome`, `python -m pip3 install pycryptodome`
